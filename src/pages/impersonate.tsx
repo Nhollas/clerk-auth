@@ -18,7 +18,7 @@ const Impersonate = () => {
       method: "GET",
     });
 
-    setImpersonationToken(createdToken);
+    setImpersonationToken(createdToken.body as unknown as string);
   };
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const Impersonate = () => {
         return;
       }
 
-      setUsers(response.body);
+      setUsers(response.body as unknown as User[]);
     };
 
     fetchUsers();
