@@ -22,7 +22,9 @@ export default async function handler(req : NextApiRequest, res : NextApiRespons
     return createdToken;
   };
 
-  const token = await createSignInToken(req.query.userId);
+  const { userId } = req.query;
+
+  const token = await createSignInToken(userId as string);
 
   res.status(200).json(token);
 }
