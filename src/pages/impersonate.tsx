@@ -1,24 +1,26 @@
-import { useUser, useSignIn, useAuth } from "@clerk/nextjs";
-import { User } from "@clerk/nextjs/dist/api";
+import { useUser, useSignIn, useClerk, useAuth } from "@clerk/nextjs";
+import { SignInToken, User } from "@clerk/nextjs/dist/api";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 const Impersonate = () => {
   const { signIn, setSession } = useSignIn();
   const { user } = useUser();
-  const [signInProcessed, setSignInProcessed] = useState<boolean>(false);
+  const { userId, actor } = useAuth();
+  const { signOut } = useClerk();
 
-  const [impersonationToken, setImpersonationToken] = useState<string | null>(
-    null
-  );
+  const [impersonationToken, setImpersonationToken] = useState<null>(null);
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[] | null>(null);
 
-  const fetchSignInToken = async (userId: string) => {
-    const createdToken = await fetch(`/api/token?userId=${userId}`, {
-      method: "GET",
-    });
+  const fetchActorToken = async (userId: string, targetUserId: string) => {
+    const { data: createdToken } = await axios.get(
+      `/api/token?userId=${userId}&targetUserId=${targetUserId}`
+    );
 
-    setImpersonationToken(createdToken.body as unknown as string);
+    console.log(createdToken);
+
+    setImpersonationToken(createdToken);
   };
 
   useEffect(() => {
@@ -26,71 +28,56 @@ const Impersonate = () => {
       return;
     }
 
-    const aFunc = async () => {
-      try {
-        // Create a signIn with the token, note that you need to use the "ticket" strategy.
-        const res = await signIn.create({
-          strategy: "ticket",
-          ticket: impersonationToken,
-        });
-
-        setSession(res.createdSessionId, () => {
-          setSignInProcessed(true);
-        });
-      } catch (err) {
-        setSignInProcessed(true);
-      }
-    };
-
-    aFunc();
+    signOut(() => {
+      window.location.href = `/sign-in?__clerk_ticket=${impersonationToken.token}`;
+    });
   }, [impersonationToken, signIn, setSession]);
 
   useEffect(() => {
-    if (users.length !== 0) {
+    if (users) {
       return;
     }
 
     const fetchUsers = async () => {
-      const response = await fetch("/api/users", {
+      const { data: users } = await axios.get<User[]>("/api/users", {
         method: "GET",
       });
 
-      if (!response) {
+      if (!users) {
         return;
       }
 
-      setUsers(response.body as unknown as User[]);
+      setUsers(users);
     };
 
     fetchUsers();
   }, [users]);
 
-  if (!impersonationToken) {
-    return (
-      <div>
-        <p>no token provided.</p>
-        <ul>
-          {users?.map((user) => (
-            <li key={user.id}>
-              <button onClick={() => fetchSignInToken(user.id)}>
-                Impersonate {user.username}
-              </button>
-            </li>
-          ))}
+  return (
+    <div className='text-black'>
+      <div className='flex flex-col gap-y-3'>
+        <h1 className='text-xl font-semibold'>Users to impersonate</h1>
+        <ul className='flex flex-col gap-y-4'>
+          {users && user ? (
+            users
+              .filter((u) => u.id !== user.id)
+              .map((u) => (
+                <li key={u.id}>
+                  <button
+                    className='bg-gray-100 border border-gray-300 font-medium px-6 py-2 rounded-md'
+                    onClick={() => fetchActorToken(user.id, u.id)}
+                  >
+                    {u.username}
+                  </button>
+                </li>
+              ))
+          ) : (
+            <div className='font-medium'>Loading users...</div>
+          )}
         </ul>
       </div>
-    );
-  }
-
-  if (!signInProcessed) {
-    return <div>loading</div>;
-  }
-
-  if (!user) {
-    return <div>error invalid token</div>;
-  }
-
-  return <div>Signed in as {user.username}</div>;
+    </div>
+  );
 };
 
 export default Impersonate;
