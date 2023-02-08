@@ -1,5 +1,5 @@
 import { useUser, useSignIn, useClerk, useAuth } from "@clerk/nextjs";
-import { SignInToken, User } from "@clerk/nextjs/dist/api";
+import { User } from "@clerk/nextjs/dist/api";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -9,7 +9,7 @@ const Impersonate = () => {
   const { userId, actor } = useAuth();
   const { signOut } = useClerk();
 
-  const [impersonationToken, setImpersonationToken] = useState<null>(null);
+  const [impersonationToken, setImpersonationToken] = useState<any>(null);
 
   const [users, setUsers] = useState<User[] | null>(null);
 
@@ -31,7 +31,7 @@ const Impersonate = () => {
     signOut(() => {
       window.location.href = `/sign-in?__clerk_ticket=${impersonationToken.token}`;
     });
-  }, [impersonationToken, signIn, setSession]);
+  }, [impersonationToken, signIn, setSession, signOut]);
 
   useEffect(() => {
     if (users) {

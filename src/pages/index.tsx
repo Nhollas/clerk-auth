@@ -10,8 +10,8 @@ export default function Home() {
     <div className='flex flex-row gap-x-4'>
       {actor && (
         <div className='text-black'>
-          <p className="font-medium">
-            <span>User {actor.sub} has </span>}
+          <p className='font-medium'>
+            <span>User {actor.sub} has </span>
             signed in as user {userId}
           </p>
         </div>
