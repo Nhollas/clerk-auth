@@ -1,6 +1,6 @@
 import Head from "next/head";
 
-export const Layout = ({ children }) => {
+export const Layout = ({ children }: { children: any }) => {
   return (
     <div className='w-full'>
       <Head>
